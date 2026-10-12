@@ -30,8 +30,13 @@ function configured() {
   return config.twilio.configured;
 }
 
-// Send a freeform WhatsApp message (valid inside the Twilio sandbox 24h window).
-async function sendMessage({ to, body, statusCallback }) {
+// Codes that mean "freeform text is not allowed here \u2014 send a Content Template instead".
+const NEEDS_TEMPLATE = /^(21654|21655|92005|63016)$/;
+
+// Send a WhatsApp message. Freeform Body text only works inside the 24h
+// conversation window; when Twilio demands a template (or TWILIO_CONTENT_SID is
+// configured for business-initiated sends), fall back to ContentSid + variables.
+async function sendMessage({ to, body, statusCallback, contentSid, contentVariables }) {
   if (!configured()) {
     const e = new Error(
       "Twilio is not configured. Set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN and TWILIO_WHATSAPP_FROM in .env."
@@ -45,37 +50,78 @@ async function sendMessage({ to, body, statusCallback }) {
     e.statusCode = 400;
     throw e;
   }
-
-  const form = new URLSearchParams({
-    To,
-    From: fromAddress(),
-    Body: String(body == null ? "" : body),
-  });
+  const text = String(body == null ? "" : body);
+  const sid = String(contentSid || config.twilio.contentSid || "").trim();
   const cb = statusCallback || config.statusCallbackUrl();
-  if (cb) form.set("StatusCallback", cb);
 
   const auth = Buffer.from(
     `${config.twilio.accountSid}:${config.twilio.authToken}`
   ).toString("base64");
-  const url = `https://api.twilio.com/2010-04-01/Accounts/${config.twilio.accountSid}/Messages.json`;
+  const headers = {
+    Authorization: `Basic ${auth}`,
+    Accept: "application/json",
+  };
 
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Basic ${auth}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-      Accept: "application/json",
-    },
-    body: form.toString(),
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const e = new Error(data.message || `Twilio API responded with HTTP ${res.status}`);
-    e.statusCode = 502;
-    e.details = { code: data.code, status: res.status, moreInfo: data.more_info };
+  const post = async (form) => {
+    headers["Content-Type"] = "application/x-www-form-urlencoded";
+    const url = `https://api.twilio.com/2010-04-01/Accounts/${config.twilio.accountSid}/Messages.json`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers,
+      body: form.toString(),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const e = new Error(data.message || `Twilio API responded with HTTP ${res.status}`);
+      e.statusCode = 502;
+      e.details = { code: data.code, status: res.status, moreInfo: data.more_info };
+      throw e;
+    }
+    return data;
+  };
+
+  const makeForm = (extra) => {
+    const form = new URLSearchParams({ To, From: fromAddress(), ...extra });
+    if (cb) form.set("StatusCallback", cb);
+    return form;
+  };
+
+  // Caller explicitly asked for a template send \u2014 no freeform attempt.
+  if (contentSid) {
+    return post(
+      makeForm({
+        ContentSid: sid,
+        ContentVariables: JSON.stringify(contentVariables || { "1": text }),
+      })
+    );
+  }
+
+  // A configured template means this account sends templates only (no freeform).
+  if (sid) {
+    return post(
+      makeForm({
+        ContentSid: sid,
+        ContentVariables: JSON.stringify(contentVariables || { "1": text }),
+      })
+    );
+  }
+
+  // No template configured: try freeform (works inside the 24h window on
+  // sandbox accounts that still allow it), then fall back if Twilio demands one.
+  try {
+    return await post(makeForm({ Body: text }));
+  } catch (e) {
+    const code = String((e.details && e.details.code) || "");
+    if (sid && NEEDS_TEMPLATE.test(code)) {
+      return post(
+        makeForm({
+          ContentSid: sid,
+          ContentVariables: JSON.stringify(contentVariables || { "1": text }),
+        })
+      );
+    }
     throw e;
   }
-  return data;
 }
 
 // Validate the X-Twilio-Signature header per Twilio's documented algorithm.

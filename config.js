@@ -19,6 +19,7 @@ const config = {
     accountSid: str(process.env.TWILIO_ACCOUNT_SID),
     authToken: str(process.env.TWILIO_AUTH_TOKEN),
     whatsappFrom: str(process.env.TWILIO_WHATSAPP_FROM),
+    contentSid: str(process.env.TWILIO_CONTENT_SID),
     publicUrl: str(process.env.PUBLIC_URL).replace(/\/+$/, ""),
     statusCallbackUrl: str(process.env.TWILIO_STATUS_CALLBACK_URL),
   },
