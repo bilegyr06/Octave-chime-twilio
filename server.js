@@ -30,7 +30,7 @@ app.use(async (_req, _res, next) => {
   next();
 });
 
-app.use(express.static(path.join(__dirname, "public")));
+app.get("/", (_req, res) => res.sendFile(path.join(__dirname, "index.html")));
 
 app.use("/api", require("./routes/system"));
 app.use("/api/account", require("./routes/account"));
