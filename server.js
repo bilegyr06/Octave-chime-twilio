@@ -12,20 +12,28 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // Ensure the schema exists once (idempotent) before the first DB-touching request.
+// Shared promise so the boot path and per-request middleware never run DDL twice.
 let dbReady = null;
 async function initDatabase() {
   if (!config.dbConfigured) return;
   await migrate();
   return seed();
 }
+function ensureDb() {
+  if (!config.dbConfigured) return Promise.resolve();
+  if (!dbReady) {
+    dbReady = initDatabase().catch((e) => {
+      dbReady = null; // allow a later retry
+      throw e;
+    });
+  }
+  return dbReady;
+}
 app.use(async (_req, _res, next) => {
-  if (config.dbConfigured && !dbReady) dbReady = initDatabase();
-  if (dbReady) {
-    try {
-      await dbReady;
-    } catch (e) {
-      console.error("[db] init failed:", e.message);
-    }
+  try {
+    await ensureDb();
+  } catch (e) {
+    console.error("[db] init failed:", e.message);
   }
   next();
 });
@@ -56,12 +64,14 @@ app.use((err, req, res, _next) => {
 const isServerless = () => String(process.env.VERCEL || "").toLowerCase() === "1";
 
 if (require.main === module) {
-  app.listen(config.port, () => {
-    console.log(`[server] Aster Bank listening on http://localhost:${config.port}`);
+  (async () => {
     if (config.dbConfigured) {
-      initDatabase()
-        .then(() => console.log("[db] schema ready and seeded"))
-        .catch((e) => console.error("[db] initialization failed:", e.message));
+      try {
+        await ensureDb();
+        console.log("[db] schema ready and seeded");
+      } catch (e) {
+        console.error("[db] initialization failed:", e.message);
+      }
     } else {
       console.warn("[db] DATABASE_URL not set \u2014 database routes will fail until configured.");
     }
@@ -75,7 +85,10 @@ if (require.main === module) {
     } else {
       require("./workers/scheduler").start();
     }
-  });
+    app.listen(config.port, () => {
+      console.log(`[server] Aster Bank listening on http://localhost:${config.port}`);
+    });
+  })();
 }
 
 module.exports = { app, initDatabase };
