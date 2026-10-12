@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Octave Chime — Product Requirements Document</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0A0F12; --teal:#16C0A8; --teal-deep:#0E8C7B; --gold:#E7B24B; --crimson:#E5484D;
+  --paper:#FBFAF6; --panel:#F3F0E8; --panel-2:#EEEAE0; --line:#E1DCCF; --line-strong:#CFC8B6;
+  --text:#1A1F22; --muted:#5C6469; --faint:#8A9298; --wa:#25D366; --wa-bubble:#E7FCE3;
+  --shadow:0 1px 2px rgba(10,15,18,.05),0 8px 30px rgba(10,15,18,.05);
+  --serif:"Fraunces",Georgia,serif; --sans:"DM Sans",system-ui,sans-serif; --mono:"JetBrains Mono",monospace;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ink:#05080A; --paper:#0A0F12; --panel:#12181C; --panel-2:#161D22; --line:#222C31; --line-strong:#33414A;
+    --text:#ECECE4; --muted:#9BA6AC; --faint:#6C767C; --wa-bubble:#12352A; --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 40px rgba(0,0,0,.4);
+    --teal:#1FD6BB; --gold:#F0C063;
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#05080A; --paper:#0A0F12; --panel:#12181C; --panel-2:#161D22; --line:#222C31; --line-strong:#33414A;
+  --text:#ECECE4; --muted:#9BA6AC; --faint:#6C767C; --wa-bubble:#12352A; --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 40px rgba(0,0,0,.4);
+  --teal:#1FD6BB; --gold:#F0C063;
+}
+*{box-sizing:inherit; margin:0; padding:0}
+html{scroll-behavior:smooth; scroll-padding-top:calc(env(safe-area-inset-top,0px) + 64px); -webkit-text-size-adjust:100%}
+body{
+  background:var(--paper); color:var(--text); font-family:var(--sans);
+  font-size:16px; line-height:1.6; -webkit-font-smoothing:antialiased;
+  font-feature-settings:"ss01","cv01";
+}
+::selection{background:var(--teal); color:#04110E}
+
+/* ---- top bar ---- */
+.topbar{
+  position:sticky; top:0; z-index:50; background:color-mix(in srgb,var(--paper) 88%,transparent);
+  backdrop-filter:blur(10px); border-bottom:1px solid var(--line);
+  padding:calc(env(safe-area-inset-top,0px) + .55rem) clamp(1rem,4vw,2rem) .55rem;
+  display:flex; align-items:center; justify-content:space-between; gap:1rem;
+}
+.brand{display:flex; align-items:center; gap:.6rem; font-weight:600; letter-spacing:-.01em}
+.brand .mark{width:26px;height:26px;border-radius:7px;background:var(--ink);display:grid;place-items:center;color:var(--teal);font-family:var(--serif);font-weight:600;font-size:1rem;flex:none}
+.brand small{display:block;font-family:var(--mono);font-size:.66rem;color:var(--faint);font-weight:500;letter-spacing:.02em}
+.tag-status{font-family:var(--mono);font-size:.68rem;color:var(--muted);border:1px solid var(--line-strong);padding:.25rem .5rem;border-radius:999px;white-space:nowrap}
+.tag-status b{color:var(--gold)}
+
+/* ---- layout ---- */
+.wrap{max-width:1180px;margin:0 auto;padding:0 clamp(1rem,4vw,2rem)}
+.grid{display:grid;grid-template-columns:230px minmax(0,1fr);gap:clamp(2rem,5vw,4rem);align-items:start}
+@media (max-width:920px){.grid{grid-template-columns:1fr}}
+
+/* ---- table of contents ---- */
+nav.toc{position:sticky;top:calc(env(safe-area-inset-top,0px) + 76px);align-self:start}
+@media (max-width:920px){nav.toc{position:static;top:auto;margin:1.5rem 0 0;border:1px solid var(--line);border-radius:14px;padding:1rem 1.1rem;background:var(--panel)}}
+nav.toc h4{font-family:var(--mono);font-size:.66rem;color:var(--faint);font-weight:600;text-transform:uppercase;letter-spacing:.14em;margin-bottom:.7rem}
+nav.toc ol{list-style:none;counter-reset:t;font-size:.85rem}
+nav.toc li{counter-increment:t;margin:.1rem 0}
+nav.toc a{display:flex;gap:.55rem;color:var(--muted);text-decoration:none;padding:.24rem 0;border-radius:6px;transition:color .15s}
+nav.toc a::before{content:counter(t,decimal-leading-zero);font-family:var(--mono);font-size:.72rem;color:var(--faint);flex:none}
+nav.toc a:hover{color:var(--teal)}
+
+/* ---- hero ---- */
+.hero{padding:clamp(2.5rem,7vw,5rem) 0 clamp(1.5rem,4vw,2.5rem);border-bottom:1px solid var(--line)}
+.eyebrow-wa{display:inline-flex;align-items:center;gap:.5rem;font-family:var(--mono);font-size:.74rem;color:var(--teal-deep);font-weight:600;margin-bottom:1.4rem}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .eyebrow-wa{color:var(--teal)}}
+:root[data-theme="dark"] .eyebrow-wa{color:var(--teal)}
+.eyebrow-wa .dot{width:8px;height:8px;border-radius:50%;background:var(--wa);box-shadow:0 0 0 4px color-mix(in srgb,var(--wa) 22%,transparent)}
+h1.title{font-family:var(--serif);font-weight:600;font-size:clamp(2.3rem,6.5vw,4.1rem);line-height:1.02;letter-spacing:-.025em;max-width:16ch}
+.lede{margin-top:1.4rem;font-size:clamp(1.05rem,2.4vw,1.28rem);line-height:1.5;color:var(--muted);max-width:60ch}
+.lede b{color:var(--text);font-weight:600}
+.docmeta{margin-top:2.2rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.docmeta div{background:var(--paper);padding:.85rem 1rem}
+.docmeta dt{font-family:var(--mono);font-size:.62rem;text-transform:uppercase;letter-spacing:.12em;color:var(--faint);margin-bottom:.25rem}
+.docmeta dd{font-size:.9rem;font-weight:500}
+
+/* ---- sections ---- */
+main{padding-bottom:5rem}
+section{padding:clamp(2.2rem,5vw,3.4rem) 0;border-bottom:1px solid var(--line)}
+.sec-head{display:flex;align-items:baseline;gap:.9rem;margin-bottom:1.4rem}
+.sec-num{font-family:var(--mono);font-size:.85rem;color:var(--teal);font-weight:600;flex:none;padding-top:.35rem}
+h2{font-family:var(--serif);font-weight:600;font-size:clamp(1.5rem,3.6vw,2.1rem);line-height:1.1;letter-spacing:-.02em}
+h3{font-family:var(--sans);font-weight:600;font-size:1.06rem;letter-spacing:-.01em;margin:1.8rem 0 .7rem;color:var(--text)}
+h3 .k{font-family:var(--mono);font-size:.72rem;color:var(--teal);margin-right:.55rem;font-weight:600}
+p{margin:.7rem 0;max-width:72ch}
+p.max{max-width:72ch}
+strong{font-weight:600;color:var(--text)}
+a.inline{color:var(--teal-deep);text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--teal) 40%,transparent);text-underline-offset:2px}
+:root[data-theme="dark"] a.inline,:root:not([data-theme="light"]) a.inline{color:var(--teal)}
+ul.clean,ol.clean{margin:.8rem 0 .8rem 0;padding-left:1.3rem;max-width:72ch}
+ul.clean li,ol.clean li{margin:.42rem 0}
+ul.clean li::marker{color:var(--teal)}
+ol.clean li::marker{color:var(--teal);font-family:var(--mono);font-weight:600;font-size:.85em}
+
+/* ---- KPI cards ---- */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1rem;margin:1.4rem 0}
+.kpi{border:1px solid var(--line);border-radius:16px;padding:1.3rem 1.25rem;background:var(--panel);position:relative;overflow:hidden}
+.kpi .fig{font-family:var(--serif);font-weight:600;font-size:2.1rem;line-height:1;letter-spacing:-.02em;color:var(--text)}
+.kpi .fig.teal{color:var(--teal-deep)} :root[data-theme="dark"] .kpi .fig.teal,:root:not([data-theme="light"]) .kpi .fig.teal{color:var(--teal)}
+.kpi .fig.gold{color:#B8862B} :root[data-theme="dark"] .kpi .fig.gold,:root:not([data-theme="light"]) .kpi .fig.gold{color:var(--gold)}
+.kpi .lbl{margin-top:.5rem;font-size:.85rem;color:var(--muted);line-height:1.35}
+.kpi .flag{margin-top:.6rem;font-family:var(--mono);font-size:.62rem;color:var(--crimson);letter-spacing:.02em}
+
+/* ---- callout / note ---- */
+.note{border-left:3px solid var(--gold);background:var(--panel);border-radius:0 12px 12px 0;padding:1rem 1.25rem;margin:1.3rem 0;font-size:.93rem}
+.note.crit{border-left-color:var(--crimson)}
+.note.teal{border-left-color:var(--teal)}
+.note b.h{display:block;font-family:var(--mono);font-size:.66rem;text-transform:uppercase;letter-spacing:.1em;margin-bottom:.35rem;color:var(--muted)}
+
+/* ---- tables ---- */
+.tbl-wrap{overflow-x:auto;margin:1.2rem 0;border:1px solid var(--line);border-radius:14px}
+table{width:100%;border-collapse:collapse;font-size:.86rem;min-width:520px}
+th{text-align:left;font-family:var(--mono);font-size:.66rem;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);font-weight:600;padding:.7rem .9rem;background:var(--panel);border-bottom:1px solid var(--line-strong)}
+td{padding:.7rem .9rem;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:none}
+td code,.mono{font-family:var(--mono);font-size:.82em;color:var(--teal-deep)}
+:root[data-theme="dark"] td code,:root:not([data-theme="light"]) td code,:root[data-theme="dark"] .mono,:root:not([data-theme="light"]) .mono{color:var(--teal)}
+td .pill{display:inline-block;font-family:var(--mono);font-size:.66rem;padding:.12rem .45rem;border-radius:5px;background:var(--panel-2);color:var(--muted)}
+
+/* ---- architecture flow ---- */
+.arch{display:flex;flex-wrap:wrap;gap:.6rem;align-items:stretch;margin:1.3rem 0}
+.arch .node{flex:1 1 130px;min-width:120px;border:1px solid var(--line);border-radius:12px;padding:.75rem .8rem;background:var(--panel);font-size:.8rem}
+.arch .node .n{font-family:var(--mono);font-size:.6rem;color:var(--teal);display:block;margin-bottom:.2rem}
+.arch .node b{font-weight:600;font-size:.85rem}
+.arch .node span.d{display:block;color:var(--muted);font-size:.76rem;margin-top:.15rem;line-height:1.3}
+
+/* ---- WhatsApp mockups ---- */
+.phones{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.4rem;margin:1.4rem 0}
+.phone{border:1px solid var(--line-strong);border-radius:22px;background:linear-gradient(180deg,#0b141a,#0d1a1f);padding:.5rem;box-shadow:var(--shadow)}
+.phone .wahead{display:flex;align-items:center;gap:.55rem;padding:.55rem .7rem;color:#e9edef;font-size:.82rem}
+.phone .wahead .av{width:30px;height:30px;border-radius:50%;background:var(--teal);display:grid;place-items:center;color:#04110E;font-family:var(--serif);font-weight:600;font-size:.85rem;flex:none}
+.phone .wahead .who b{display:block;font-weight:600;font-size:.85rem}
+.phone .wahead .who small{color:#8aa;font-size:.66rem}
+.phone .wabody{background:#0b141a;border-radius:0 0 18px 18px;padding:.9rem .7rem 1.1rem;min-height:120px;
+  background-image:radial-gradient(circle at 20% 10%,rgba(255,255,255,.02) 0,transparent 40%)}
+.bubble{background:var(--wa-bubble);color:#0b1f17;border-radius:10px 10px 10px 2px;padding:.6rem .7rem;max-width:88%;font-size:.78rem;line-height:1.45;box-shadow:0 1px 1px rgba(0,0,0,.25)}
+:root[data-theme="dark"] .bubble,:root:not([data-theme="light"]) .bubble{color:#dff5e9}
+.bubble .b-h{font-weight:700;font-size:.8rem;display:flex;align-items:center;gap:.3rem;margin-bottom:.25rem}
+.bubble .amt{font-family:var(--mono);font-weight:600}
+.bubble .row{display:flex;justify-content:space-between;gap:1rem;font-family:var(--mono);font-size:.72rem;margin:.08rem 0}
+.bubble .row .v{font-weight:600}
+.bubble hr{border:none;border-top:1px dashed rgba(11,31,23,.25);margin:.4rem 0}
+:root[data-theme="dark"] .bubble hr,:root:not([data-theme="light"]) .bubble hr{border-top-color:rgba(223,245,233,.2)}
+.bubble .t{display:block;text-align:right;font-size:.62rem;opacity:.6;margin-top:.3rem;font-family:var(--mono)}
+.bubble .cta{margin-top:.4rem;font-size:.72rem;color:#0E8C7B;font-weight:600}
+.phone .cap{color:#8aa;font-size:.68rem;text-align:center;padding:.5rem .4rem 0;font-family:var(--mono)}
+
+/* ---- roadmap ---- */
+.roadmap{margin:1.4rem 0;border-left:2px solid var(--line-strong);padding-left:0}
+.phase{position:relative;padding:0 0 1.4rem 1.6rem}
+.phase::before{content:"";position:absolute;left:-7px;top:.3rem;width:12px;height:12px;border-radius:50%;background:var(--paper);border:2px solid var(--teal)}
+.phase.done::before{background:var(--teal)}
+.phase .ph{font-family:var(--mono);font-size:.68rem;color:var(--teal);font-weight:600;letter-spacing:.04em}
+.phase h4{font-weight:600;font-size:1rem;margin:.15rem 0 .3rem}
+.phase p{margin:.2rem 0;font-size:.88rem;color:var(--muted);max-width:66ch}
+
+/* ---- metric identity block ---- */
+.identity{font-family:var(--mono);font-size:.86rem;background:var(--ink);color:#dfe7ea;border-radius:14px;padding:1.1rem 1.2rem;margin:1.2rem 0;line-height:1.7;overflow-x:auto}
+.identity .c{color:var(--teal)} .identity .g{color:var(--gold)} .identity .r{color:var(--crimson)}
+:root[data-theme="dark"] .identity,:root:not([data-theme="light"]) .identity{border:1px solid var(--line)}
+
+footer{padding:3rem clamp(1rem,4vw,2rem) 4rem;text-align:center;color:var(--faint)}
+footer .logo{font-family:var(--serif);font-weight:600;font-size:1.1rem;color:var(--text)}
+footer .sing{font-family:var(--mono);font-size:.72rem;color:var(--teal);margin-top:.3rem;letter-spacing:.02em}
+footer p{margin:.6rem auto 0;font-size:.76rem;max-width:60ch}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:1.4rem}
+@media (max-width:680px){.two-col{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <span class="mark">C</span>
+    <span>Octave&nbsp;Chime <small>PRODUCT REQUIREMENTS · v0.1</small></span>
+  </div>
+  <span class="tag-status">Status: <b>Draft for review</b></span>
+</div>
+
+<div class="wrap">
+<header class="hero">
+  <span class="eyebrow-wa"><span class="dot"></span>WhatsApp-native · Utility messaging · Octave Analytics</span>
+  <h1 class="title">Transaction alerts that live where customers actually read.</h1>
+  <p class="lede"><b>Octave Chime</b> delivers bank transaction notifications over WhatsApp — real-time, to <b>multiple recipients per transaction</b>, plus an <b>end-of-day account summary</b>. This document specifies the platform and the <b>simulation banking app</b> we'll build to demonstrate it end to end.</p>
+  <dl class="docmeta">
+    <div><dt>Owner</dt><dd>Blessing T. Oladeji</dd></div>
+    <div><dt>Function</dt><dd>Analytics &amp; Customer Data Sciences</dd></div>
+    <div><dt>Version</dt><dd>0.1 — Draft</dd></div>
+    <div><dt>Date</dt><dd>20 Sep 2026</dd></div>
+    <div><dt>Reviewers</dt><dd>TBD</dd></div>
+  </dl>
+</header>
+
+<div class="grid">
+  <nav class="toc">
+    <h4>Contents</h4>
+    <ol>
+      <li><a href="#overview">Overview &amp; context</a></li>
+      <li><a href="#problem">Problem statement</a></li>
+      <li><a href="#goals">Goals &amp; success metrics</a></li>
+      <li><a href="#users">Users &amp; personas</a></li>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#arch">Solution &amp; architecture</a></li>
+      <li><a href="#func">Functional requirements</a></li>
+      <li><a href="#templates">Message templates</a></li>
+      <li><a href="#metrics">Metric definitions</a></li>
+      <li><a href="#data">Data model</a></li>
+      <li><a href="#nfr">Non-functional reqs</a></li>
+      <li><a href="#cost">Cost &amp; business case</a></li>
+      <li><a href="#risks">Risks &amp; mitigations</a></li>
+      <li><a href="#design">Design direction</a></li>
+      <li><a href="#roadmap">Roadmap</a></li>
+      <li><a href="#open">Open questions</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <!-- 1 -->
+    <section id="overview">
+      <div class="sec-head"><span class="sec-num">01</span><h2>Overview &amp; context</h2></div>
+      <p class="max">Nigerian banks lean on A2P SMS for transaction alerts — a channel that is costly at scale, character-limited, one-way, and increasingly ignored. WhatsApp reaches the same customers on a channel they already keep open, supports rich media and two-way replies, and — used correctly — can reshape both the cost line and the engagement story.</p>
+      <p class="max">Octave Chime is a notification platform that sits beside a bank's core, listens for posted transactions, and pushes formatted alerts to WhatsApp. Two capabilities distinguish it from a plain SMS-to-WhatsApp swap: <strong>multi-recipient delivery</strong> (one transaction can alert several people — a joint-account pair, a business owner and their accountant) and a scheduled <strong>end-of-day summary</strong> that closes each account's day with opening balance, movement, and closing balance.</p>
+      <p class="max">To demonstrate the platform without touching a live core banking system, we will build a lightweight <strong>simulation banking app</strong>. It performs realistic transactions — send money, check balance, pay bills, buy airtime — and every action emits a transaction event that flows through Chime to WhatsApp. The simulator is the demo vehicle; the notification platform is the product.</p>
+      <div class="note teal"><b class="h">In one line</b>Build a simulated bank that generates real transaction events, and a WhatsApp notification engine that turns each event into a multi-recipient alert plus a daily account summary.</div>
+    </section>
+
+    <!-- 2 -->
+    <section id="problem">
+      <div class="sec-head"><span class="sec-num">02</span><h2>Problem statement</h2></div>
+      <ul class="clean">
+        <li><strong>SMS is expensive and getting more so.</strong> High-volume transaction alerting is a real cost line, and the pricing dynamics keep shifting under banks.</li>
+        <li><strong>SMS is thin.</strong> 160 characters, no branding, no media, no reply path — a poor surface for anything beyond a bare alert, and useless for cross-sell.</li>
+        <li><strong>Alerts are single-recipient by default.</strong> Joint accounts, corporate accounts with several signatories, and dependants monitored by a guardian all need the <em>same</em> alert to reach <em>several</em> people. SMS treats one account as one phone number.</li>
+        <li><strong>No daily close.</strong> Customers get a stream of individual alerts but never a clean end-of-day picture — the single most useful artefact for trust and for spotting anomalies.</li>
+        <li><strong>Fraud signal is weak.</strong> A one-way SMS gives the customer no fast, in-channel way to flag "not me."</li>
+      </ul>
+    </section>
+
+    <!-- 3 -->
+    <section id="goals">
+      <div class="sec-head"><span class="sec-num">03</span><h2>Goals &amp; success metrics</h2></div>
+      <p class="max">The concept sets three headline objectives. We keep them, but tie each to a measurable product metric — and we flag one that the current WhatsApp pricing model forces us to re-validate rather than assert (see §12).</p>
+      <div class="kpis">
+        <div class="kpi"><div class="fig teal">≤50%</div><div class="lbl">Reduction in bulk-alert notification cost vs SMS baseline</div><div class="flag">◆ Re-validate under per-message pricing — §12</div></div>
+        <div class="kpi"><div class="fig gold">43%</div><div class="lbl">Fewer fraud-related cases on e-banking channels via in-alert "report" path</div><div class="flag">◆ Target, needs baseline</div></div>
+        <div class="kpi"><div class="fig">↑</div><div class="lbl">Premium customer base growth &amp; customer lifetime value from cross-sell</div></div>
+      </div>
+      <h3>Product-level success metrics (what we actually instrument)</h3>
+      <div class="tbl-wrap"><table>
+        <tr><th>Metric</th><th>Definition</th><th>Target (pilot)</th></tr>
+        <tr><td>Opt-in rate</td><td>Customers who consent to WhatsApp alerts / eligible base</td><td>&gt; 60%</td></tr>
+        <tr><td>Delivery rate</td><td>Delivered alerts / attempted, per day</td><td>&gt; 98%</td></tr>
+        <tr><td>Median alert latency</td><td>Transaction posted → message delivered</td><td>&lt; 10 s</td></tr>
+        <tr><td>Read rate</td><td>Read receipts / delivered</td><td>&gt; 75%</td></tr>
+        <tr><td>EOD summary engagement</td><td>Summaries read or replied to / sent</td><td>&gt; 50%</td></tr>
+        <tr><td>Cost per delivered alert</td><td>Total messaging spend / delivered alerts</td><td>Track vs SMS ₦/alert</td></tr>
+        <tr><td>Fraud-report actions</td><td>"Not me" replies acted on within SLA</td><td>Baseline in pilot</td></tr>
+      </table></div>
+    </section>
+
+    <!-- 4 -->
+    <section id="users">
+      <div class="sec-head"><span class="sec-num">04</span><h2>Users &amp; personas</h2></div>
+      <div class="tbl-wrap"><table>
+        <tr><th>Persona</th><th>Need</th><th>Why multi-recipient / EOD matters</th></tr>
+        <tr><td><strong>Retail customer</strong></td><td>Trustworthy, instant alerts on their own account</td><td>Baseline single-recipient case</td></tr>
+        <tr><td><strong>Joint account holders</strong></td><td>Both partners see every movement</td><td>One transaction → two recipients</td></tr>
+        <tr><td><strong>SME / corporate</strong></td><td>Owner + accountant + signatory all alerted; clean daily close</td><td>One transaction → N recipients; EOD summary is the day's ledger</td></tr>
+        <tr><td><strong>Guardian / dependant</strong></td><td>Parent monitors a student/dependant account</td><td>One transaction → guardian + holder</td></tr>
+        <tr><td><strong>Bank CVM / Ops team</strong></td><td>Configure templates, campaigns, monitor delivery &amp; fraud replies</td><td>Admin console consumer</td></tr>
+        <tr><td><strong>Demo operator (sandbox)</strong></td><td>Drive transactions live in a pitch and show alerts land instantly</td><td>Primary user of the simulation app</td></tr>
+      </table></div>
+    </section>
+
+    <!-- 5 -->
+    <section id="scope">
+      <div class="sec-head"><span class="sec-num">05</span><h2>Scope</h2></div>
+      <div class="two-col">
+        <div>
+          <h3><span class="k">IN</span>In scope — MVP</h3>
+          <ul class="clean">
+            <li>Simulation banking app: auth, accounts, send money, check balance, bill payment, airtime, mini-statement</li>
+            <li>Transaction event pipeline (event on every posted transaction)</li>
+            <li>Real-time WhatsApp alert per transaction (credit &amp; debit)</li>
+            <li>Multi-recipient subscription per account, with roles &amp; consent</li>
+            <li>End-of-day summary engine (scheduled, per account)</li>
+            <li>WhatsApp opt-in flow &amp; template management</li>
+            <li>Admin console: recipients, templates, delivery logs</li>
+            <li>Demo dashboard for live pitching</li>
+          </ul>
+        </div>
+        <div>
+          <h3><span class="k">OUT</span>Out of scope — MVP</h3>
+          <ul class="clean">
+            <li>Real core-banking / NIBSS integration (simulated only)</li>
+            <li>Real money movement, settlement, or licensing</li>
+            <li>Full CVM campaign engine (design hooks only)</li>
+            <li>Native iOS/Android store builds (web/PWA sandbox is enough for demo)</li>
+            <li>Multi-language templates (English first)</li>
+            <li>SMS/email fallback beyond a stubbed interface</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6 -->
+    <section id="arch">
+      <div class="sec-head"><span class="sec-num">06</span><h2>Solution &amp; architecture</h2></div>
+      <p class="max">The transaction is the event. Everything downstream reacts to it. Keeping the notification engine event-driven and decoupled from the "bank" means the same engine that listens to our simulator can later listen to a real core with no change to its logic.</p>
+      <div class="arch">
+        <div class="node"><span class="n">SOURCE</span><b>Simulation Bank</b><span class="d">Send money, bills, airtime, balance. Posts transactions to the ledger.</span></div>
+        <div class="node"><span class="n">CORE</span><b>Ledger Service</b><span class="d">Double-entry balances, opening/closing, per-account day rollup.</span></div>
+        <div class="node"><span class="n">BUS</span><b>Event Stream</b><span class="d">transaction.posted events, idempotent, ordered per account.</span></div>
+        <div class="node"><span class="n">BRAIN</span><b>Notification Orchestrator</b><span class="d">Resolves recipients, picks template, renders, dispatches.</span></div>
+        <div class="node"><span class="n">GATEWAY</span><b>WhatsApp Gateway</b><span class="d">Meta Cloud API via BSP. Templates, delivery receipts, replies.</span></div>
+      </div>
+      <div class="arch">
+        <div class="node"><span class="n">SUPPORTING</span><b>Recipient / Subscription Service</b><span class="d">Account → recipients map, roles, consent, preferences.</span></div>
+        <div class="node"><span class="n">SUPPORTING</span><b>EOD Summary Engine</b><span class="d">Scheduled job; aggregates the day per account; sends summary.</span></div>
+        <div class="node"><span class="n">SUPPORTING</span><b>Template Manager</b><span class="d">Approved WhatsApp templates by category (utility / marketing).</span></div>
+        <div class="node"><span class="n">SUPPORTING</span><b>Admin &amp; Analytics</b><span class="d">Console + delivery, read, cost dashboards.</span></div>
+      </div>
+      <div class="note"><b class="h">Design principle</b>The notification engine never talks to the bank directly — only to the event stream. Swap the simulator for a real core and nothing downstream changes.</div>
+    </section>
+
+    <!-- 7 -->
+    <section id="func">
+      <div class="sec-head"><span class="sec-num">07</span><h2>Functional requirements</h2></div>
+
+      <h3><span class="k">7.1</span>Simulation banking app</h3>
+      <ul class="clean">
+        <li><strong>Auth &amp; onboarding:</strong> sign in, create demo customers, set WhatsApp number(s) &amp; opt-in.</li>
+        <li><strong>Account types:</strong> individual, <em>joint</em>, and <em>corporate</em> — the types that make multi-recipient meaningful.</li>
+        <li><strong>Send money:</strong> intra-bank &amp; simulated inter-bank transfer; debits sender, credits beneficiary (if internal).</li>
+        <li><strong>Check balance:</strong> available &amp; ledger balance.</li>
+        <li><strong>Bill payment:</strong> utilities/TV/etc. from a demo biller list — debit.</li>
+        <li><strong>Airtime / data:</strong> quick top-up — debit.</li>
+        <li><strong>Mini-statement:</strong> last N transactions.</li>
+        <li><strong>Every transaction emits a <code>transaction.posted</code> event</strong> — the trigger for all notifications.</li>
+      </ul>
+
+      <h3><span class="k">7.2</span>Real-time transaction notification</h3>
+      <ul class="clean">
+        <li>On each posted transaction, deliver a WhatsApp alert within the latency target.</li>
+        <li>Debit and credit variants, with amount, party, reference, timestamp, and <strong>available balance after</strong>.</li>
+        <li>Include an in-message fraud path ("Not you? Reply REPORT").</li>
+        <li>Idempotent: a retried event never double-sends.</li>
+      </ul>
+
+      <h3><span class="k">7.3</span>Multi-recipient delivery</h3>
+      <ul class="clean">
+        <li>Each account holds a <strong>list of recipients</strong>, each with a WhatsApp number, a <strong>role</strong> (owner, joint-holder, signatory, accountant, guardian, viewer), and per-recipient <strong>consent</strong> and <strong>preferences</strong> (which alert types; thresholds; EOD yes/no).</li>
+        <li>One transaction fans out to all eligible recipients as separate delivered messages.</li>
+        <li>Recipients can be added/removed in the admin console; consent is required before any send.</li>
+        <li><strong>Threshold rules:</strong> e.g. accountant only alerted above ₦100k — configurable per recipient.</li>
+      </ul>
+
+      <h3><span class="k">7.4</span>End-of-day summary</h3>
+      <ul class="clean">
+        <li>Scheduled at configurable close-of-business (per bank timezone).</li>
+        <li>Per account, compute and send: opening balance, transaction count, transaction volume, total inflow, total outflow, net value, closing balance (definitions in §9).</li>
+        <li>Sent to all recipients who opted into the summary.</li>
+        <li>Idempotent and re-runnable for a given business date.</li>
+      </ul>
+
+      <h3><span class="k">7.5</span>WhatsApp integration</h3>
+      <ul class="clean">
+        <li>Meta WhatsApp Business Platform (Cloud API) through a Business Solution Provider.</li>
+        <li>Business-initiated alerts use pre-approved <strong>utility</strong> templates; cross-sell uses <strong>marketing</strong> templates with separate opt-in.</li>
+        <li>Handle delivery/read receipts and inbound replies (for the fraud path &amp; two-way CVM).</li>
+        <li>Respect the 24-hour service window; fall back to SMS (stub) when a number is not on WhatsApp.</li>
+      </ul>
+
+      <h3><span class="k">7.6</span>Admin &amp; CVM console</h3>
+      <ul class="clean">
+        <li>Manage accounts, recipients, roles, consent, templates, and schedules.</li>
+        <li>Delivery, read, and cost dashboards; failed-message queue.</li>
+        <li>Hooks for cross-sell/upsell campaigns (design only in MVP).</li>
+      </ul>
+    </section>
+
+    <!-- 8 -->
+    <section id="templates">
+      <div class="sec-head"><span class="sec-num">08</span><h2>Message templates</h2></div>
+      <p class="max">These are the artefacts customers actually see — so they carry the product. Below: a single-transaction debit alert, the multi-recipient behaviour, and the end-of-day summary. Copy is illustrative; final wording must fit approved WhatsApp utility-template structure.</p>
+      <div class="phones">
+        <div class="phone">
+          <div class="wahead"><span class="av">A</span><div class="who"><b>Aster Bank</b><small>Business account · verified</small></div></div>
+          <div class="wabody">
+            <div class="bubble">
+              <div class="b-h">⬇ Debit Alert · <span class="amt">₦25,000.00</span></div>
+              <div class="row"><span>Account</span><span class="v">*4821</span></div>
+              <div class="row"><span>To</span><span class="v">J. ADEYEMI / GTB</span></div>
+              <div class="row"><span>Ref</span><span class="v">TRF-8842910</span></div>
+              <div class="row"><span>Time</span><span class="v">14:32, 20 Sep</span></div>
+              <hr>
+              <div class="row"><span>Available balance</span><span class="v">₦412,300.55</span></div>
+              <div class="cta">Not you? Reply REPORT to freeze.</div>
+              <span class="t">14:32 ✓✓</span>
+            </div>
+          </div>
+          <div class="cap">Single transaction · debit</div>
+        </div>
+
+        <div class="phone">
+          <div class="wahead"><span class="av">A</span><div class="who"><b>Aster Bank</b><small>Same alert · 3 recipients</small></div></div>
+          <div class="wabody">
+            <div class="bubble" style="margin-bottom:.5rem">
+              <div class="b-h">⬇ Debit ₦25,000.00 · *4821</div>
+              <span class="t">→ Owner (Chidi) ✓✓</span>
+            </div>
+            <div class="bubble" style="margin-bottom:.5rem;max-width:82%">
+              <div class="b-h">⬇ Debit ₦25,000.00 · *4821</div>
+              <span class="t">→ Accountant (Ada) ✓✓</span>
+            </div>
+            <div class="bubble" style="max-width:76%">
+              <div class="b-h">⬇ Debit ₦25,000.00 · *4821</div>
+              <span class="t">→ Signatory (Musa) ✓</span>
+            </div>
+          </div>
+          <div class="cap">One transaction → many recipients</div>
+        </div>
+
+        <div class="phone">
+          <div class="wahead"><span class="av">A</span><div class="who"><b>Aster Bank</b><small>Daily summary · close of business</small></div></div>
+          <div class="wabody">
+            <div class="bubble" style="max-width:94%">
+              <div class="b-h">📊 Daily Summary · 20 Sep 2026</div>
+              <div class="row"><span>Account</span><span class="v">*4821</span></div>
+              <hr>
+              <div class="row"><span>Opening balance</span><span class="v">₦380,100.55</span></div>
+              <div class="row"><span>Inflows (12)</span><span class="v">+₦210,000.00</span></div>
+              <div class="row"><span>Outflows (9)</span><span class="v">−₦177,800.00</span></div>
+              <div class="row"><span>Net movement</span><span class="v">+₦32,200.00</span></div>
+              <div class="row"><span>Closing balance</span><span class="v">₦412,300.55</span></div>
+              <hr>
+              <div class="row"><span>Transactions</span><span class="v">21</span></div>
+              <div class="row"><span>Volume (gross)</span><span class="v">₦387,800.00</span></div>
+              <span class="t">18:00 ✓✓</span>
+            </div>
+          </div>
+          <div class="cap">End-of-day account summary</div>
+        </div>
+      </div>
+      <div class="note teal"><b class="h">Note</b>The EOD figures reconcile: Closing = Opening + Inflow − Outflow, and Net movement = Inflow − Outflow = Closing − Opening. That identity is the summary's built-in self-check (see §9).</div>
+    </section>
+
+    <!-- 9 -->
+    <section id="metrics">
+      <div class="sec-head"><span class="sec-num">09</span><h2>Metric definitions</h2></div>
+      <p class="max">The concept listed count, volume, value, inflow, outflow, and balances. "Volume" and "value" get used loosely in Nigerian banking, so we pin exact definitions here — this is the one place ambiguity would cost us at build time.</p>
+      <div class="tbl-wrap"><table>
+        <tr><th>Field</th><th>Definition</th><th>Formula</th></tr>
+        <tr><td><strong>Opening balance</strong></td><td>Available balance carried from the prior business day's close</td><td><code>= prior day Closing</code></td></tr>
+        <tr><td><strong>Transaction count</strong></td><td>Number of posted transactions in the day (debits + credits)</td><td><code>= n(debits) + n(credits)</code></td></tr>
+        <tr><td><strong>Transaction volume</strong></td><td>Gross monetary throughput — total money moved, regardless of direction</td><td><code>= Σ|amount|</code></td></tr>
+        <tr><td><strong>Total inflow</strong></td><td>Sum of all credits</td><td><code>= Σ credits</code></td></tr>
+        <tr><td><strong>Total outflow</strong></td><td>Sum of all debits</td><td><code>= Σ debits</code></td></tr>
+        <tr><td><strong>Net value</strong> <span class="pill">"total value"</span></td><td>Net movement across the day</td><td><code>= Inflow − Outflow</code></td></tr>
+        <tr><td><strong>Closing balance</strong></td><td>Available balance at close of business</td><td><code>= Opening + Inflow − Outflow</code></td></tr>
+      </table></div>
+      <div class="identity">
+<span class="c">reconciliation identity</span><br>
+Closing = Opening + Inflow − Outflow<br>
+Net&nbsp;&nbsp;&nbsp;&nbsp; = Inflow − Outflow = Closing − Opening<br>
+Volume&nbsp; = Inflow + Outflow&nbsp;&nbsp;<span class="g">// gross, ≠ Net</span><br>
+Count&nbsp;&nbsp; = n(debits) + n(credits)
+      </div>
+      <div class="note crit"><b class="h">Decision needed</b>Confirm the "volume vs value" reading. This spec sets <strong>Volume = gross money moved (Σ|amount|)</strong> and <strong>Value = net (Inflow − Outflow)</strong>. If your convention is <em>Volume = transaction count</em>, we rename fields accordingly — but count and volume should not be the same number in the summary.</div>
+    </section>
+
+    <!-- 10 -->
+    <section id="data">
+      <div class="sec-head"><span class="sec-num">10</span><h2>Data model (core entities)</h2></div>
+      <div class="tbl-wrap"><table>
+        <tr><th>Entity</th><th>Key fields</th><th>Notes</th></tr>
+        <tr><td><code>Customer</code></td><td>id, name, primary_whatsapp, consent_status</td><td>A person; may hold/relate to many accounts</td></tr>
+        <tr><td><code>Account</code></td><td>id, number, type(individual/joint/corporate), currency, balance</td><td>Type drives multi-recipient behaviour</td></tr>
+        <tr><td><code>Recipient</code></td><td>id, account_id, whatsapp, role, consent, prefs, threshold</td><td>The account→people mapping; the heart of multi-recipient</td></tr>
+        <tr><td><code>Transaction</code></td><td>id, account_id, direction, amount, party, ref, channel, posted_at, business_date</td><td>Emits <code>transaction.posted</code></td></tr>
+        <tr><td><code>DailyAccountSummary</code></td><td>account_id, business_date, opening, count, volume, inflow, outflow, net, closing</td><td>One row per account per day; feeds EOD message</td></tr>
+        <tr><td><code>Template</code></td><td>id, category(utility/marketing), body, params, wa_status</td><td>Mirrors Meta-approved templates</td></tr>
+        <tr><td><code>MessageLog</code></td><td>id, recipient_id, template_id, txn_id, status, cost, sent_at</td><td>Delivery, read, cost, fraud-reply audit trail</td></tr>
+        <tr><td><code>ConsentRecord</code></td><td>customer_id, channel, scope, timestamp, source</td><td>NDPA-grade consent audit</td></tr>
+      </table></div>
+    </section>
+
+    <!-- 11 -->
+    <section id="nfr">
+      <div class="sec-head"><span class="sec-num">11</span><h2>Non-functional requirements</h2></div>
+      <div class="two-col">
+        <div>
+          <h3>Security &amp; privacy</h3>
+          <ul class="clean">
+            <li>TLS in transit; encryption at rest for all customer &amp; message data</li>
+            <li>Minimise PII inside templates; mask account numbers (<code>*4821</code>)</li>
+            <li>Consent required &amp; auditable before any send (NDPA 2023)</li>
+            <li>Role-based access to the admin console; full audit log</li>
+            <li>Align with CBN e-banking guidance &amp; WhatsApp Business policy</li>
+          </ul>
+          <h3>Reliability</h3>
+          <ul class="clean">
+            <li>At-least-once delivery with idempotency keys (no double alerts)</li>
+            <li>Retry with backoff; dead-letter queue for failures</li>
+            <li>EOD job re-runnable per business date without duplication</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Performance &amp; scale</h3>
+          <ul class="clean">
+            <li>Alert latency &lt; 10 s p95 from posting to delivery</li>
+            <li>Handle burst throughput (e.g. salary-day spikes)</li>
+            <li>Horizontal scaling of orchestrator &amp; gateway workers</li>
+          </ul>
+          <h3>Observability</h3>
+          <ul class="clean">
+            <li>Delivery, read, cost, and error metrics per template/account</li>
+            <li>Alerting on delivery-rate drops or gateway errors</li>
+            <li>Cost tracking per message for the §12 business case</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12 -->
+    <section id="cost">
+      <div class="sec-head"><span class="sec-num">12</span><h2>Cost &amp; business case</h2></div>
+      <p class="max">The concept slide assumes WhatsApp's old <em>per-conversation</em> pricing, where a 24-hour window covered many messages for one fixed fee. <strong>That model no longer exists.</strong> Meta moved to <strong>per-delivered-message</strong> pricing in July 2025, and from <strong>1 October 2026</strong> even in-window service replies become chargeable. This changes where the savings come from.</p>
+      <div class="kpis">
+        <div class="kpi"><div class="fig teal">≈₦14</div><div class="lbl">Reported cost of one utility (transaction) message to a Nigerian number under current per-message pricing (~$0.0101)</div></div>
+        <div class="kpi"><div class="fig gold">≈₦84</div><div class="lbl">Cost of a marketing message (~$0.062) — cross-sell is a different, pricier category</div></div>
+        <div class="kpi"><div class="fig">Tiers</div><div class="lbl">Volume tiers reduce utility rates as monthly volume grows</div></div>
+      </div>
+      <div class="note crit"><b class="h">Honest read on the 50% claim</b>Under per-message pricing, a single WhatsApp utility alert is <em>not automatically cheaper</em> than a single SMS, and multi-recipient <em>multiplies</em> message count. So "50% cheaper" cannot be assumed — it must be modelled. The real savings levers are: (1) <strong>consolidation</strong> — the EOD summary replaces a cluster of individual SMS; (2) <strong>volume tiers</strong> at bank scale; (3) <strong>free inbound-triggered utility messages</strong> inside the service window; and (4) value, not just cost — <strong>fraud reduction</strong> and <strong>cross-sell revenue</strong> that SMS can't deliver. Action: build a side-by-side cost model with the client's real SMS rate card and alert volumes before we commit to a savings figure.</div>
+      <p class="max"><em>Figures above are recent public reports of Meta's Nigeria rate card and move with the naira; treat them as directional and confirm against Meta's live pricing before modelling.</em></p>
+    </section>
+
+    <!-- 13 -->
+    <section id="risks">
+      <div class="sec-head"><span class="sec-num">13</span><h2>Risks &amp; mitigations</h2></div>
+      <div class="tbl-wrap"><table>
+        <tr><th>Risk</th><th>Impact</th><th>Mitigation</th></tr>
+        <tr><td>WhatsApp pricing rises again</td><td>Erodes cost case</td><td>Model conservatively; lean on consolidation &amp; value, not raw per-message price</td></tr>
+        <tr><td>Template rejection / policy change</td><td>Alerts blocked</td><td>Keep strict utility templates; maintain SMS fallback</td></tr>
+        <tr><td>Opt-in friction</td><td>Low reach</td><td>Frictionless in-app + branch opt-in; clear value message</td></tr>
+        <tr><td>Number not on WhatsApp</td><td>Undelivered alert</td><td>Detect &amp; fall back to SMS automatically</td></tr>
+        <tr><td>Multi-recipient consent gaps</td><td>Regulatory / privacy breach</td><td>Per-recipient consent, audited; no send without it</td></tr>
+        <tr><td>Marketing/utility mis-classification</td><td>Higher fees, penalties</td><td>Never disguise cross-sell as utility; separate templates &amp; opt-in</td></tr>
+        <tr><td>Data protection (NDPA)</td><td>Legal exposure</td><td>Consent records, minimisation, encryption, DPO sign-off</td></tr>
+      </table></div>
+    </section>
+
+    <!-- 14 -->
+    <section id="design">
+      <div class="sec-head"><span class="sec-num">14</span><h2>Design direction</h2></div>
+      <p class="max">The simulator has to look like a bank people would trust and a product Octave would ship — because in a pitch, the demo <em>is</em> the argument. It inherits the Octave system this document is built in.</p>
+      <div class="two-col">
+        <div>
+          <h3>Visual language</h3>
+          <ul class="clean">
+            <li><strong>Palette:</strong> near-black <span class="mono">#0A0F12</span>, teal <span class="mono">#16C0A8</span>, gold <span class="mono">#E7B24B</span>, crimson <span class="mono">#E5484D</span> for debits/alerts</li>
+            <li><strong>Type:</strong> Fraunces (balances &amp; display), DM Sans (UI), JetBrains Mono (amounts, refs)</li>
+            <li><strong>Feel:</strong> confident dark fintech surface, generous space, one bold moment per screen — the balance</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Sandbox screens</h3>
+          <ul class="clean">
+            <li>Home / balance with quick actions (Send · Bills · Airtime · Statement)</li>
+            <li>Send money flow → instant on-screen confirmation</li>
+            <li>Live "notifications" panel mirroring what hits WhatsApp</li>
+            <li>Recipients screen (add owner / accountant / signatory)</li>
+            <li>Operator view to fire transactions during a demo</li>
+          </ul>
+        </div>
+      </div>
+      <div class="note"><b class="h">On tooling</b>I don't have a literal "Figma / Adobe" plug-in, but I can design and build the sandbox to a high finish directly in code (the same system as this PRD), which is faster to demo and deploys straight to Netlify — your usual path. If you'd rather I produce static high-fidelity mockups first, I can do that too.</div>
+    </section>
+
+    <!-- 15 -->
+    <section id="roadmap">
+      <div class="sec-head"><span class="sec-num">15</span><h2>Roadmap</h2></div>
+      <div class="roadmap">
+        <div class="phase done"><span class="ph">PHASE 0 · NOW</span><h4>PRD &amp; concept sign-off</h4><p>This document. Lock scope, metric definitions, and the cost-modelling approach.</p></div>
+        <div class="phase"><span class="ph">PHASE 1</span><h4>Simulation bank + single-recipient alerts</h4><p>Build the sandbox app and the event pipeline; deliver real-time debit/credit alerts to one recipient over WhatsApp.</p></div>
+        <div class="phase"><span class="ph">PHASE 2</span><h4>Multi-recipient + end-of-day summary</h4><p>Recipient/role/consent model; fan-out; scheduled EOD summary with full reconciliation.</p></div>
+        <div class="phase"><span class="ph">PHASE 3</span><h4>Admin console + cost dashboard</h4><p>Template management, delivery/read/cost analytics, fraud-reply handling, SMS fallback.</p></div>
+        <div class="phase"><span class="ph">PHASE 4</span><h4>CVM cross-sell + pilot readiness</h4><p>Marketing-template hooks, opt-in flows, and a real client cost model for a bank pilot.</p></div>
+      </div>
+    </section>
+
+    <!-- 16 -->
+    <section id="open" style="border-bottom:none">
+      <div class="sec-head"><span class="sec-num">16</span><h2>Open questions</h2></div>
+      <ol class="clean">
+        <li><strong>Volume vs value</strong> — confirm the definitions in §9 (this is the one decision that shapes the summary schema).</li>
+        <li><strong>Multi-recipient consent</strong> — does each recipient opt in individually, or does the account owner authorise on their behalf? Regulatory implications differ.</li>
+        <li><strong>Close-of-business time</strong> — fixed (e.g. 18:00) or per-account configurable?</li>
+        <li><strong>Fallback</strong> — is SMS fallback in MVP scope, or stubbed for the demo?</li>
+        <li><strong>Target client</strong> — is this pitched generically or tailored to a named bank's brand for the demo?</li>
+        <li><strong>Sandbox reach</strong> — do alerts go to your real WhatsApp during demos (needs a live BSP/number), or is a simulated WhatsApp panel enough for the pitch?</li>
+      </ol>
+    </section>
+  </main>
+</div>
+</div>
+
+<footer>
+  <div class="logo">Octave Analytics</div>
+  <div class="sing">Make Your Data Sing</div>
+  <p>Octave Chime — Product Requirements Document · v0.1 Draft · Prepared 20 Sep 2026. Pricing figures are directional public reports and should be confirmed against Meta's live rate card before any cost commitment.</p>
+</footer>
+
+</body>
+</html>

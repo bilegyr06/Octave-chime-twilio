@@ -1,0 +1,21 @@
+{
+  "name": "octave-chime",
+  "version": "0.0.0",
+  "description": "Aster Bank pseudo-bank simulator with real Twilio WhatsApp transaction alerts",
+  "type": "commonjs",
+  "main": "server.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "db:setup": "node db/migrate.js && node db/seed.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "node-cron": "^3.0.3",
+    "pg": "^8.11.5"
+  }
+}

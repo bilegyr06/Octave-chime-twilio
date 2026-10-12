@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Aster Bank</title>
+<meta name="theme-color" content="#0A0F12">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#0A0F12; --panel:#12181C; --panel-2:#161D22; --line:#222C31; --line-2:#2C383E;
+  --text:#ECECE4; --muted:#9BA6AC; --faint:#6B767C;
+  --teal:#1FD6BB; --teal-deep:#0E8C7B; --gold:#F0C063; --crimson:#E5484D;
+  --sans:"DM Sans",system-ui,sans-serif; --disp:"Fraunces",Georgia,serif; --mono:"JetBrains Mono",monospace;
+  --r:18px; --r-sm:13px;
+  --shadow:0 18px 46px rgba(0,0,0,.45);
+  --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:#06090B; color:var(--text); font-family:var(--sans); font-size:16px; line-height:1.5;
+  -webkit-font-smoothing:antialiased; min-height:100vh; display:flex; justify-content:center;
+}
+::selection{background:var(--teal);color:#06231e}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select{font-family:inherit;font-size:1rem}
+:focus-visible{outline:2px solid var(--teal);outline-offset:2px;border-radius:7px}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.teal{color:var(--teal)} .crimson{color:var(--crimson)} .gold{color:var(--gold)} .muted{color:var(--muted)}
+
+#app{
+  width:100%; max-width:480px; min-height:100vh; background:var(--bg); position:relative;
+  box-shadow:0 0 0 1px rgba(255,255,255,.03), 0 40px 120px rgba(0,0,0,.6);
+  display:flex; flex-direction:column;
+}
+
+/* top bar */
+.topbar{
+  position:sticky; top:0; z-index:30; padding:calc(var(--safe-t) + 1rem) 1.25rem .9rem;
+  display:flex; align-items:center; justify-content:space-between; gap:1rem;
+  background:color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter:blur(14px);
+}
+.brand{display:flex; align-items:center; gap:.55rem}
+.brand .mark{width:26px;height:26px;border-radius:8px;background:linear-gradient(140deg,var(--teal),var(--teal-deep));display:grid;place-items:center;color:#06231e}
+.brand .nm{font-family:var(--disp);font-weight:600;font-size:1.22rem;letter-spacing:-.01em}
+.brand .nm b{font-weight:700}
+.acct-chip{font-family:var(--mono);font-size:.68rem;font-weight:500;letter-spacing:.03em;text-transform:uppercase;
+  padding:.34rem .62rem;border-radius:999px;border:1px solid var(--line-2);color:var(--muted)}
+
+main{flex:1; padding:0 1.25rem calc(88px + var(--safe-b));}
+.view{display:none; animation:fade .28s ease}
+.view.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.page-title{font-family:var(--disp);font-weight:600;font-size:1.6rem;letter-spacing:-.02em;margin:.4rem 0 1.1rem}
+
+/* balance card */
+.bal-card{
+  position:relative; overflow:hidden; border-radius:22px; padding:1.4rem 1.35rem 1.25rem;
+  background:radial-gradient(120% 130% at 100% 0%, rgba(31,214,187,.16), transparent 55%),
+             linear-gradient(160deg,var(--panel-2),#0D1316);
+  border:1px solid var(--line);
+}
+.bal-card::after{content:"";position:absolute;right:-70px;bottom:-90px;width:210px;height:210px;border-radius:50%;
+  background:radial-gradient(circle, rgba(31,214,187,.10), transparent 70%)}
+.bal-top{display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.bal-label{font-size:.8rem;color:var(--muted);letter-spacing:.01em}
+.eye{width:30px;height:30px;border-radius:9px;background:rgba(255,255,255,.05);display:grid;place-items:center;color:var(--muted)}
+.eye:hover{background:rgba(255,255,255,.1);color:var(--text)}
+.bal-amt{font-family:var(--disp);font-weight:600;font-size:clamp(2.1rem,9vw,2.7rem);letter-spacing:-.02em;line-height:1;margin:.7rem 0 .8rem}
+.bal-meta{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+.bal-meta .num{font-family:var(--mono);font-size:.82rem;color:var(--muted)}
+.chip{font-family:var(--mono);font-size:.66rem;font-weight:500;text-transform:uppercase;letter-spacing:.04em;
+  padding:.28rem .55rem;border-radius:7px;background:rgba(31,214,187,.1);color:var(--teal)}
+.bal-stats{display:flex;gap:1.6rem;margin-top:1.3rem;padding-top:1.15rem;border-top:1px solid var(--line)}
+.bal-stats .st .k{font-size:.72rem;color:var(--faint);display:block;margin-bottom:.22rem}
+.bal-stats .st .v{font-family:var(--mono);font-weight:600;font-size:.94rem}
+
+/* section heads */
+.sec{display:flex;align-items:center;justify-content:space-between;margin:1.7rem 0 .85rem}
+.sec h2{font-family:var(--disp);font-weight:600;font-size:1.08rem;letter-spacing:-.01em}
+.sec .mini{font-family:var(--mono);font-size:.7rem;color:var(--faint)}
+.sec button.mini{color:var(--teal)}
+
+/* quick actions */
+.qa-row{display:grid;grid-template-columns:repeat(4,1fr);gap:.7rem}
+.qa{display:flex;flex-direction:column;align-items:center;gap:.55rem;padding:.3rem 0;text-align:center}
+.qa .qi{width:52px;height:52px;border-radius:16px;background:var(--panel);border:1px solid var(--line);
+  display:grid;place-items:center;color:var(--teal);transition:transform .15s,border-color .15s,background .15s}
+.qa:hover .qi{transform:translateY(-2px);border-color:var(--teal-deep);background:var(--panel-2)}
+.qa .ql{font-size:.76rem;color:var(--muted);font-weight:500}
+
+/* action cards (transfers) */
+.act-grid{display:grid;grid-template-columns:1fr 1fr;gap:.85rem}
+.act{display:flex;align-items:flex-start;gap:.85rem;padding:1.05rem .95rem;border-radius:16px;
+  background:var(--panel);border:1px solid var(--line);text-align:left;transition:transform .15s,border-color .15s}
+.act:hover{transform:translateY(-2px);border-color:var(--line-2)}
+.act .ai{width:38px;height:38px;border-radius:11px;background:rgba(31,214,187,.1);color:var(--teal);display:grid;place-items:center;flex:none}
+.act.warm .ai{background:rgba(240,192,99,.12);color:var(--gold)}
+.act .an{font-size:.94rem;font-weight:600}
+.act .ad{font-size:.74rem;color:var(--muted);margin-top:.12rem;line-height:1.35}
+
+/* transaction list */
+.txn-list{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.txn{display:flex;align-items:center;gap:.85rem;padding:.85rem 1rem;border-bottom:1px solid var(--line)}
+.txn:last-child{border-bottom:none}
+.txn .tic{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;flex:none}
+.txn .tic.cr{background:rgba(31,214,187,.1);color:var(--teal)}
+.txn .tic.dr{background:rgba(229,72,77,.1);color:var(--crimson)}
+.txn .tmeta{flex:1;min-width:0}
+.txn .tmeta b{font-size:.9rem;font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.txn .tmeta small{font-size:.71rem;color:var(--faint);font-family:var(--mono)}
+.txn .tamt{font-family:var(--mono);font-weight:600;font-size:.9rem;white-space:nowrap}
+.txn .tamt.cr{color:var(--teal)} .txn .tamt.dr{color:var(--crimson)}
+.empty{padding:2.4rem 1.2rem;text-align:center;color:var(--faint);font-size:.86rem}
+.empty .em{font-size:1.5rem;display:block;margin-bottom:.5rem;opacity:.7}
+
+/* recipients */
+.recip-list{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.recip{display:flex;align-items:center;gap:.8rem;padding:.8rem 1rem;border-bottom:1px solid var(--line)}
+.recip:last-child{border-bottom:none}
+.recip .av{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:.82rem;color:#06231e;flex:none}
+.recip .rmeta{flex:1;min-width:0}
+.recip .rmeta b{font-size:.88rem;font-weight:600;display:block}
+.recip .rmeta small{font-size:.71rem;color:var(--faint);font-family:var(--mono)}
+.badge{font-family:var(--mono);font-size:.62rem;font-weight:500;text-transform:uppercase;letter-spacing:.03em;
+  padding:.26rem .5rem;border-radius:7px;white-space:nowrap}
+.badge.on{background:rgba(31,214,187,.12);color:var(--teal)}
+.badge.pend{background:rgba(240,192,99,.13);color:var(--gold)}
+.badge.off{background:rgba(229,72,77,.12);color:var(--crimson)}
+.icon-btn{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;color:var(--faint);flex:none}
+.icon-btn:hover{background:rgba(229,72,77,.12);color:var(--crimson)}
+
+/* more / settings */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:1.1rem 1.15rem;margin-bottom:.9rem}
+.card h3{font-family:var(--disp);font-weight:600;font-size:1rem;margin-bottom:.9rem}
+.seg{display:flex;gap:.3rem;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:.28rem}
+.seg button{flex:1;padding:.55rem .3rem;border-radius:9px;font-size:.8rem;font-weight:600;color:var(--muted);text-transform:capitalize}
+.seg button.on{background:var(--panel-2);color:var(--teal);box-shadow:0 2px 10px rgba(0,0,0,.3)}
+.field{margin-bottom:.9rem}
+.field:last-child{margin-bottom:0}
+.field label{display:block;font-size:.74rem;font-weight:600;color:var(--muted);margin-bottom:.42rem}
+.field input,.field select{width:100%;padding:.78rem .9rem;border:1.5px solid var(--line-2);border-radius:11px;
+  background:var(--bg);color:var(--text);transition:border-color .15s}
+.field input:focus,.field select:focus{outline:none;border-color:var(--teal-deep);background:var(--panel-2)}
+.field .hint{font-size:.72rem;color:var(--faint);margin-top:.35rem}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;font-weight:600;font-size:.92rem;
+  padding:.82rem 1.3rem;border-radius:12px;background:var(--teal);color:#06231e;transition:transform .15s,filter .15s}
+.btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.btn:active{transform:none}
+.btn.block{width:100%}
+.btn.ghost{background:transparent;border:1.5px solid var(--line-2);color:var(--text)}
+.btn.ghost:hover{border-color:var(--faint);background:var(--panel-2)}
+.btn.danger{background:transparent;border:1.5px solid rgba(229,72,77,.4);color:var(--crimson)}
+.btn.danger:hover{background:rgba(229,72,77,.1)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+
+/* bottom nav */
+.tabbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;z-index:40;
+  display:grid;grid-template-columns:repeat(4,1fr);gap:.2rem;
+  padding:.55rem .8rem calc(.55rem + var(--safe-b));
+  background:color-mix(in srgb, var(--panel) 92%, transparent); backdrop-filter:blur(16px);
+  border-top:1px solid var(--line)}
+.tab{display:flex;flex-direction:column;align-items:center;gap:.24rem;padding:.42rem 0;color:var(--faint);
+  font-size:.66rem;font-weight:600;letter-spacing:.01em;transition:color .15s}
+.tab.on{color:var(--teal)}
+.tab svg{transition:transform .15s}
+.tab.on svg{transform:translateY(-1px)}
+
+/* modal */
+.modal-bg{position:fixed;inset:0;background:rgba(4,7,9,.66);backdrop-filter:blur(4px);z-index:60;
+  display:none;align-items:flex-end;justify-content:center}
+.modal-bg.on{display:flex}
+.modal{background:var(--panel);width:100%;max-width:480px;border-radius:24px 24px 0 0;border:1px solid var(--line);
+  border-bottom:none;box-shadow:var(--shadow);animation:mup .3s cubic-bezier(.2,.8,.3,1);max-height:92vh;overflow-y:auto}
+@media(min-width:520px){.modal-bg{align-items:center;padding:1.5rem}.modal{border-radius:24px;border-bottom:1px solid var(--line)}}
+@keyframes mup{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+.modal .mh{display:flex;align-items:center;justify-content:space-between;padding:1.3rem 1.35rem .3rem}
+.modal .mh h3{font-family:var(--disp);font-weight:600;font-size:1.24rem;letter-spacing:-.01em}
+.modal .mh .x{width:32px;height:32px;border-radius:9px;background:var(--bg);display:grid;place-items:center;color:var(--muted);font-size:1.15rem}
+.modal .mh .x:hover{background:var(--panel-2);color:var(--text)}
+.modal .mb{padding:.7rem 1.35rem 1.5rem}
+.modal .mb .desc{font-size:.86rem;color:var(--muted);margin-bottom:1.1rem;line-height:1.45}
+.amtbox{position:relative}
+.amtbox .cur{position:absolute;left:.95rem;top:50%;transform:translateY(-50%);color:var(--faint);font-family:var(--mono);font-weight:600;pointer-events:none}
+.amtbox input{padding-left:2.1rem}
+.chips{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.55rem}
+.chip-btn{font-family:var(--mono);font-size:.74rem;font-weight:600;padding:.34rem .6rem;border-radius:8px;
+  background:var(--bg);border:1px solid var(--line);color:var(--muted)}
+.chip-btn:hover{border-color:var(--teal-deep);color:var(--teal)}
+.err{color:var(--crimson);font-size:.77rem;margin:.5rem 0;display:none}
+.err.on{display:block}
+.check{display:flex;align-items:center;gap:.6rem;margin:.2rem 0 .9rem}
+.check input{width:auto}
+.check span{font-size:.84rem;color:var(--muted)}
+.receipt{text-align:center;padding:.4rem 0}
+.receipt .rc-ic{width:60px;height:60px;border-radius:50%;display:grid;place-items:center;margin:0 auto 1rem}
+.receipt .rc-ic.ok{background:rgba(31,214,187,.12);color:var(--teal)}
+.receipt .rc-ic.dr{background:rgba(229,72,77,.12);color:var(--crimson)}
+.receipt .rc-amt{font-family:var(--disp);font-weight:600;font-size:2rem;letter-spacing:-.02em;margin-bottom:.3rem}
+.receipt .rc-sub{font-size:.84rem;color:var(--muted);margin-bottom:1.3rem}
+.rc-rows{text-align:left;border-top:1px solid var(--line)}
+.rc-rows .rr{display:flex;justify-content:space-between;gap:1rem;padding:.62rem 0;border-bottom:1px solid var(--line);font-size:.85rem}
+.rc-rows .rr span{color:var(--muted)} .rc-rows .rr b{font-family:var(--mono);font-weight:600;text-align:right;word-break:break-word}
+.rc-note{font-size:.78rem;color:var(--faint);margin-top:1rem;line-height:1.45}
+
+/* toast */
+.toast-wrap{position:fixed;left:50%;bottom:calc(84px + var(--safe-b));transform:translateX(-50%);z-index:80;
+  display:flex;flex-direction:column;gap:.5rem;align-items:center;pointer-events:none;width:100%;max-width:480px;padding:0 1.25rem}
+.toast{background:var(--panel-2);border:1px solid var(--line-2);color:var(--text);padding:.72rem 1.05rem;border-radius:13px;
+  font-size:.85rem;font-weight:500;box-shadow:var(--shadow);display:flex;align-items:center;gap:.55rem;
+  animation:tin .3s ease;max-width:100%}
+.toast .d{width:8px;height:8px;border-radius:50%;background:var(--teal);flex:none}
+.toast.bad .d{background:var(--crimson)}
+@keyframes tin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.foot{text-align:center;padding:1.6rem 0 .5rem;font-size:.74rem;color:var(--faint);line-height:1.6}
+.foot b{color:var(--muted);font-weight:600}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <div class="brand">
+      <span class="mark" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 2 4 20h16L12 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8.5 14h7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+      <span class="nm"><b>Aster</b> Bank</span>
+    </div>
+    <span class="acct-chip" id="acctChip">Account</span>
+  </header>
+
+  <main>
+    <!-- HOME -->
+    <section class="view on" data-view="home">
+      <div class="bal-card">
+        <div class="bal-top">
+          <span class="bal-label">Available balance</span>
+          <button class="eye" id="eyeBtn" aria-label="Toggle balance">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="2.6" stroke="currentColor" stroke-width="2"/></svg>
+          </button>
+        </div>
+        <div class="bal-amt" id="balAmt">₦0.00</div>
+        <div class="bal-meta">
+          <span class="num" id="balNum">—</span>
+          <span class="chip" id="balType">—</span>
+        </div>
+        <div class="bal-stats">
+          <div class="st"><span class="k">Today in</span><span class="v teal" id="balIn">+₦0.00</span></div>
+          <div class="st"><span class="k">Today out</span><span class="v crimson" id="balOut">−₦0.00</span></div>
+          <div class="st"><span class="k">Txns</span><span class="v" id="balCount">0</span></div>
+        </div>
+      </div>
+
+      <div class="sec"><h2>Move money</h2></div>
+      <div class="qa-row">
+        <button class="qa" data-modal="send"><span class="qi"><svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span><span class="ql">Send</span></button>
+        <button class="qa" data-modal="receive"><span class="qi"><svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M12 3v14m0 0 5-5m-5 5-5-5M5 21h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ql">Receive</span></button>
+        <button class="qa" data-modal="bill"><span class="qi"><svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2V2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 7h6M9 11h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><span class="ql">Bill</span></button>
+        <button class="qa" data-modal="airtime"><span class="qi"><svg width="21" height="21" viewBox="0 0 24 24" fill="none"><rect x="6" y="2" width="12" height="20" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M11 18h2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><span class="ql">Airtime</span></button>
+      </div>
+
+      <div class="sec"><h2>Recent activity</h2><button class="mini" data-goto="transfers">View all</button></div>
+      <div class="txn-list" id="recentList"></div>
+    </section>
+
+    <!-- TRANSFERS -->
+    <section class="view" data-view="transfers">
+      <div class="page-title">Transfers</div>
+      <div class="act-grid">
+        <button class="act" data-modal="send"><span class="ai"><svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span><span><span class="an">Send money</span><span class="ad">Debit & alert recipients</span></span></button>
+        <button class="act" data-modal="receive"><span class="ai"><svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M12 3v14m0 0 5-5m-5 5-5-5M5 21h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><span class="an">Receive</span><span class="ad">Simulate an inflow</span></span></button>
+        <button class="act warm" data-modal="bill"><span class="ai"><svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2V2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 7h6M9 11h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><span><span class="an">Pay a bill</span><span class="ad">Post a biller debit</span></span></button>
+        <button class="act warm" data-modal="airtime"><span class="ai"><svg width="19" height="19" viewBox="0 0 24 24" fill="none"><rect x="6" y="2" width="12" height="20" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M11 18h2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><span><span class="an">Airtime</span><span class="ad">Top up a phone</span></span></button>
+      </div>
+      <div class="sec"><h2>Statement</h2><span class="mini" id="stmtCount">0 today</span></div>
+      <div class="txn-list" id="fullList"></div>
+    </section>
+
+    <!-- ALERTS -->
+    <section class="view" data-view="alerts">
+      <div class="page-title">Alert recipients</div>
+      <p class="muted" style="font-size:.86rem;margin:-.6rem 0 1.1rem;line-height:1.5">People who receive a WhatsApp alert on every transaction. New numbers must confirm by replying <b class="teal">YES</b> on WhatsApp.</p>
+      <button class="btn block" data-modal="recipient" style="margin-bottom:1rem">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+        Add recipient
+      </button>
+      <div class="recip-list" id="recipList"></div>
+    </section>
+
+    <!-- MORE -->
+    <section class="view" data-view="more">
+      <div class="page-title">More</div>
+
+      <div class="card">
+        <h3>Account holder</h3>
+        <div class="field">
+          <label>WhatsApp number (trusted base recipient)</label>
+          <input id="holderWa" class="mono" placeholder="+234..." autocomplete="off">
+          <div class="hint">The holder receives alerts without opt-in.</div>
+        </div>
+        <button class="btn block" id="saveHolder">Save number</button>
+      </div>
+
+      <div class="card">
+        <h3>Account type</h3>
+        <div class="seg" id="typeSeg">
+          <button data-type="individual">Individual</button>
+          <button data-type="joint">Joint</button>
+          <button data-type="corporate">Corporate</button>
+        </div>
+        <div class="hint" style="margin-top:.6rem">Joint &amp; corporate accounts prompt you to add recipients on the first debit.</div>
+      </div>
+
+      <div class="card">
+        <h3>Day operations</h3>
+        <div class="row2">
+          <button class="btn ghost" data-modal="balance">Balance enquiry</button>
+          <button class="btn" id="closeDay">Close day</button>
+        </div>
+        <button class="btn danger block" id="resetDay" style="margin-top:.6rem">Reset demo day</button>
+      </div>
+
+      <div class="sec"><h2>Full statement</h2><span class="mini" id="stmtCount2">0 today</span></div>
+      <div class="txn-list" id="moreList"></div>
+
+      <div class="foot">Aster Bank · simulation only — no real money moves.<br><b>Powered by Octave Analytics</b></div>
+    </section>
+  </main>
+
+  <nav class="tabbar" id="tabbar">
+    <button class="tab on" data-view="home"><svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M3 10.5 12 3l9 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9.5V21h14V9.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Home</button>
+    <button class="tab" data-view="transfers"><svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M4 8h13m0 0-3.5-3.5M17 8l-3.5 3.5M20 16H7m0 0 3.5-3.5M7 16l3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Transfers</button>
+    <button class="tab" data-view="alerts"><svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M12 3a5 5 0 0 0-5 5c0 5-2 6-2 6h14s-2-1-2-6a5 5 0 0 0-5-5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 20a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Alerts</button>
+    <button class="tab" data-view="more"><svg width="21" height="21" viewBox="0 0 24 24" fill="none"><circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/></svg>More</button>
+  </nav>
+</div>
+
+<div class="modal-bg" id="modalBg"><div class="modal" id="modal"></div></div>
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const NGN = (n) => "\u20a6" + Number(n || 0).toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const hhmm = (d) => new Date(d).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+const dayLabel = (d) => new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+const initials = (name) => String(name || "?").split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+const ROLES = ["owner", "joint-holder", "signatory", "accountant", "guardian", "viewer"];
+const ROLE_LABEL = { owner: "Owner", "joint-holder": "Joint holder", signatory: "Signatory", accountant: "Accountant", guardian: "Guardian", viewer: "Viewer" };
+const AV_COLORS = ["#1FD6BB", "#F0C063", "#7FB2FF", "#C88CF0", "#6FE39A", "#FF9B7A"];
+const BILLERS = ["DSTV / GOtv", "Ikeja Electric (IKEDC)", "EKEDC Electricity", "LAWMA Waste", "Spectranet Internet", "LIRS Tax"];
+const TYPE_LABEL = { individual: "Individual", joint: "Joint", corporate: "Corporate" };
+
+const S = { account: null, transactions: [], recipients: [], view: "home", hidden: false, poll: null, prompted: false };
+
+async function api(method, path, body) {
+  const res = await fetch(path, {
+    method,
+    headers: body ? { "Content-Type": "application/json" } : {},
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data.ok === false) throw new Error(data.error || "HTTP " + res.status);
+  return data;
+}
+
+/* ---------- data ---------- */
+async function refresh() {
+  const [acc, txns, recips] = await Promise.all([
+    api("GET", "/api/account"),
+    api("GET", "/api/transactions"),
+    api("GET", "/api/recipients"),
+  ]);
+  S.account = acc.account;
+  S.transactions = txns.transactions;
+  S.recipients = recips.recipients;
+  renderAll();
+}
+
+/* ---------- render ---------- */
+function renderAll() {
+  renderBalance();
+  renderTxns();
+  renderRecipients();
+  $("acctChip").textContent = TYPE_LABEL[S.account.type] || "Account";
+  $("holderWa").value = S.account.holderWa || "";
+  document.querySelectorAll("#typeSeg button").forEach((b) => b.classList.toggle("on", b.dataset.type === S.account.type));
+}
+
+function renderBalance() {
+  const a = S.account;
+  $("balAmt").textContent = S.hidden ? "\u20a6 ••••••" : NGN(a.balance);
+  $("balNum").textContent = a.number;
+  $("balType").textContent = TYPE_LABEL[a.type] || a.type;
+  $("balIn").textContent = "+" + NGN(a.inflow || 0);
+  $("balOut").textContent = "\u2212" + NGN(a.outflow || 0);
+  $("balCount").textContent = a.txnCount || 0;
+}
+
+function txnRow(t) {
+  const cr = t.direction === "credit";
+  const arrow = cr
+    ? '<path d="M12 19V5m0 0-6 6m6-6 6 6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>'
+    : '<path d="M12 5v14m0 0 6-6m-6 6-6-6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>';
+  return `<div class="txn"><span class="tic ${cr ? "cr" : "dr"}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none">${arrow}</svg></span>
+    <div class="tmeta"><b>${esc(t.party)}</b><small>${esc(t.channel)} \u00b7 ${esc(t.ref)} \u00b7 ${hhmm(t.postedAt)}</small></div>
+    <span class="tamt ${cr ? "cr" : "dr"}">${cr ? "+" : "\u2212"}${NGN(t.amount)}</span></div>`;
+}
+
+function renderTxns() {
+  const list = S.transactions;
+  const empty = '<div class="empty"><span class="em">\u2248</span>No transactions yet today.</div>';
+  const recent = list.slice(0, 5).map(txnRow).join("") || empty;
+  const full = list.map(txnRow).join("") || empty;
+  $("recentList").innerHTML = recent;
+  $("fullList").innerHTML = full;
+  $("moreList").innerHTML = full;
+  $("stmtCount").textContent = list.length + " today";
+  $("stmtCount2").textContent = list.length + " today";
+}
+
+function consentBadge(r) {
+  if (r.optOut || r.consentStatus === "opted_out") return '<span class="badge off">Opted out</span>';
+  if (r.consentStatus === "granted") return '<span class="badge on">' + (r.isHolder ? "Holder" : "Active") + "</span>";
+  return '<span class="badge pend">Awaiting YES</span>';
+}
+
+function renderRecipients() {
+  const el = $("recipList");
+  if (!S.recipients.length) {
+    el.innerHTML = '<div class="empty"><span class="em">\u2709</span>No alert recipients yet.<br>Add someone to start sending WhatsApp alerts.</div>';
+    return;
+  }
+  el.innerHTML = S.recipients
+    .map((r, i) => {
+      const color = AV_COLORS[i % AV_COLORS.length];
+      const meta = r.waNumber + " \u00b7 " + (ROLE_LABEL[r.role] || r.role) + (r.eodOptIn ? " \u00b7 EOD" : "");
+      return `<div class="recip"><span class="av" style="background:${color}">${esc(initials(r.name))}</span>
+        <div class="rmeta"><b>${esc(r.name)}</b><small>${esc(meta)}</small></div>
+        ${consentBadge(r)}
+        <button class="icon-btn" data-remove="${r.id}" title="Remove"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>`;
+    })
+    .join("");
+}
+
+/* ---------- navigation ---------- */
+function showView(view) {
+  S.view = view;
+  document.querySelectorAll(".view").forEach((v) => v.classList.toggle("on", v.dataset.view === view));
+  document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("on", t.dataset.view === view));
+  window.scrollTo(0, 0);
+  if (view === "alerts") startPoll();
+  else stopPoll();
+}
+
+function startPoll() {
+  stopPoll();
+  S.poll = setInterval(async () => {
+    try {
+      const r = await api("GET", "/api/recipients");
+      S.recipients = r.recipients;
+      renderRecipients();
+    } catch (_) {}
+  }, 5000);
+}
+function stopPoll() {
+  if (S.poll) clearInterval(S.poll);
+  S.poll = null;
+}
+
+/* ---------- toast ---------- */
+function toast(msg, bad) {
+  const t = document.createElement("div");
+  t.className = "toast" + (bad ? " bad" : "");
+  t.innerHTML = '<span class="d"></span>' + esc(msg);
+  $("toasts").appendChild(t);
+  setTimeout(() => {
+    t.style.transition = "opacity .4s";
+    t.style.opacity = "0";
+    setTimeout(() => t.remove(), 400);
+  }, 3200);
+}
+
+/* ---------- modal ---------- */
+function openModal(kind, data) {
+  const m = $("modal");
+  if (kind === "send") m.innerHTML = formHTML("Send money", "Debit the account and alert every eligible recipient.", [
+    field("Beneficiary name", "text", "sName", "e.g. John Adeyemi"),
+    selField("Beneficiary bank", "sBank", ["GTBank", "Zenith Bank", "UBA", "First Bank", "Kuda", "OPay", "Aster Bank (internal)"]),
+    amtField("sAmt"),
+  ], "submitSend()");
+  else if (kind === "receive") m.innerHTML = formHTML("Receive money", "Simulate an inbound transfer \u2014 a credit toward today's inflow.", [
+    field("Sender name", "text", "rName", "e.g. Payola Ltd"),
+    amtField("rAmt"),
+  ], "submitReceive()");
+  else if (kind === "bill") m.innerHTML = formHTML("Pay a bill", "Pay a biller \u2014 posts a debit and fires an alert.", [
+    selField("Biller", "bName", BILLERS),
+    amtField("bAmt"),
+  ], "submitBill()");
+  else if (kind === "airtime") m.innerHTML = formHTML("Buy airtime", "Top up a phone \u2014 a small debit with an instant alert.", [
+    field("Phone number", "tel", "aPhone", "0803 000 0000"),
+    amtField("aAmt"),
+  ], "submitAirtime()");
+  else if (kind === "balance") m.innerHTML = balanceHTML();
+  else if (kind === "recipient") m.innerHTML = recipientHTML();
+  else if (kind === "prompt") m.innerHTML = promptHTML();
+
+  $("modalBg").classList.add("on");
+  const first = m.querySelector("input, select");
+  if (first) setTimeout(() => first.focus(), 60);
+}
+function closeModal() {
+  $("modalBg").classList.remove("on");
+  $("modal").innerHTML = "";
+}
+
+function formHTML(title, desc, fields, handler) {
+  return `<div class="mh"><h3>${title}</h3><button class="x" onclick="closeModal()">\u00d7</button></div>
+    <div class="mb"><p class="desc">${desc}</p>${fields.join("")}
+    <div class="err" id="mErr"></div>
+    <button class="btn block" onclick="${handler}" style="margin-top:.4rem">${title}
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>`;
+}
+function field(l, t, id, ph) {
+  return `<div class="field"><label>${l}</label><input type="${t}" id="${id}" placeholder="${ph}" autocomplete="off"></div>`;
+}
+function selField(l, id, opts) {
+  return `<div class="field"><label>${l}</label><select id="${id}">${opts.map((o) => `<option>${o}</option>`).join("")}</select></div>`;
+}
+function amtField(id) {
+  return `<div class="field"><label>Amount</label><div class="amtbox"><span class="cur">\u20a6</span>
+    <input type="number" id="${id}" placeholder="0.00" inputmode="decimal"></div>
+    <div class="chips">${[5000, 25000, 100000, 250000].map((v) => `<button class="chip-btn" onclick="document.getElementById('${id}').value=${v}">${v.toLocaleString()}</button>`).join("")}</div></div>`;
+}
+function recipientHTML() {
+  return `<div class="mh"><h3>Add recipient</h3><button class="x" onclick="closeModal()">\u00d7</button></div>
+    <div class="mb"><p class="desc">They'll get a WhatsApp message to confirm before alerts start.</p>
+    ${field("Name", "text", "rcName", "e.g. Chidi Okafor")}
+    ${field("WhatsApp number", "tel", "rcWa", "+234 803 000 0000")}
+    ${selField("Role", "rcRole", ROLES.map((r) => ROLE_LABEL[r]))}
+    <div class="field"><label>Alert scope</label><select id="rcScope">
+      <option value="all">All transactions</option>
+      <option value="threshold">Only above a threshold</option>
+    </select></div>
+    <div class="field" id="rcThrWrap" style="display:none"><label>Threshold amount</label>
+      <div class="amtbox"><span class="cur">\u20a6</span><input type="number" id="rcThr" placeholder="0.00" inputmode="decimal"></div></div>
+    <label class="check"><input type="checkbox" id="rcEod" checked><span>Include in daily summary</span></label>
+    <div class="err" id="mErr"></div>
+    <button class="btn block" onclick="submitRecipient()">Send opt-in request</button></div>`;
+}
+function balanceHTML() {
+  return `<div class="mh"><h3>Balance enquiry</h3><button class="x" onclick="closeModal()">\u00d7</button></div>
+    <div class="mb"><div class="receipt"><div class="rc-ic ok"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M2 10h20M6 15h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+    <div class="rc-sub">Available \u00b7 ${esc(S.account.number)}</div>
+    <div class="rc-amt">${NGN(S.account.balance)}</div></div>
+    <div class="rc-rows"><div class="rr"><span>Opening balance</span><b>${NGN(S.account.openingBalance)}</b></div>
+    <div class="rr"><span>Transactions today</span><b>${S.account.txnCount || 0}</b></div></div>
+    <button class="btn block" onclick="closeModal()" style="margin-top:1.1rem">Done</button></div></div>`;
+}
+function promptHTML() {
+  return `<div class="mh"><h3>Add alert recipients</h3><button class="x" onclick="closeModal()">\u00d7</button></div>
+    <div class="mb"><p class="desc">This is a ${esc(TYPE_LABEL[S.account.type])} account, but no one is set up to receive alerts yet. Add a recipient so each transaction is shared on WhatsApp.</p>
+    <button class="btn block" onclick="openModal('recipient')">Add recipient</button>
+    <button class="btn ghost block" onclick="closeModal()" style="margin-top:.55rem">Not now</button></div>`;
+}
+function mErr(msg) {
+  const e = $("mErr");
+  if (e) {
+    e.textContent = msg;
+    e.classList.add("on");
+  }
+}
+
+/* ---------- transaction submission ---------- */
+function valAmt(id, debit) {
+  const v = Number($(id).value);
+  if (!v || v <= 0) {
+    mErr("Enter a valid amount.");
+    return null;
+  }
+  if (debit && v > S.account.balance) {
+    mErr("Insufficient balance. Available " + NGN(S.account.balance));
+    return null;
+  }
+  return v;
+}
+
+async function postTransaction(payload) {
+  const btn = $("modal").querySelector(".btn.block");
+  if (btn) btn.disabled = true;
+  try {
+    const res = await api("POST", "/api/transactions", payload);
+    closeModal();
+    await refresh();
+    showReceipt(res.transaction, res.notifications || []);
+    if (!res.duplicate && res.transaction.direction === "debit" && S.account.type !== "individual" && S.recipients.length === 0 && !S.prompted) {
+      S.prompted = true;
+      setTimeout(() => openModal("prompt"), 900);
+    }
+  } catch (e) {
+    mErr(e.message);
+    if (btn) btn.disabled = false;
+  }
+}
+
+function submitSend() {
+  const a = valAmt("sAmt", true);
+  if (a === null) return;
+  const name = $("sName").value.trim() || "Beneficiary";
+  const bank = $("sBank").value.replace(" (internal)", "");
+  postTransaction({ direction: "debit", type: "transfer", amount: a, party: name + " / " + bank, channel: "Transfer" });
+}
+function submitReceive() {
+  const a = valAmt("rAmt", false);
+  if (a === null) return;
+  const name = $("rName").value.trim() || "Sender";
+  postTransaction({ direction: "credit", type: "credit", amount: a, party: name, channel: "Transfer In" });
+}
+function submitBill() {
+  const a = valAmt("bAmt", true);
+  if (a === null) return;
+  postTransaction({ direction: "debit", type: "bill", amount: a, party: $("bName").value, channel: "Bill Payment" });
+}
+function submitAirtime() {
+  const a = valAmt("aAmt", true);
+  if (a === null) return;
+  const p = $("aPhone").value.trim() || "Airtime";
+  postTransaction({ direction: "debit", type: "airtime", amount: a, party: "Airtime \u00b7 " + p, channel: "Airtime" });
+}
+
+async function submitRecipient() {
+  const name = $("rcName").value.trim();
+  const wa = $("rcWa").value.trim();
+  if (!name) return mErr("Enter a name.");
+  if (!wa) return mErr("Enter a WhatsApp number.");
+  const role = ROLES[$("rcRole").selectedIndex] || "viewer";
+  const scope = $("rcScope").value;
+  const threshold = scope === "threshold" ? Number($("rcThr").value) || 0 : 0;
+  const eodOptIn = $("rcEod").checked;
+  try {
+    await api("POST", "/api/recipients", { name, waNumber: wa, role, alertScope: scope, threshold, eodOptIn });
+    closeModal();
+    await refresh();
+    toast("Opt-in request sent \u2014 awaiting their YES reply");
+    if (S.view !== "alerts") showView("alerts");
+  } catch (e) {
+    mErr(e.message);
+  }
+}
+
+/* ---------- receipt ---------- */
+function deliveryLine(notifications) {
+  if (!notifications.length) return "No recipients were eligible \u2014 no alert sent.";
+  const ok = notifications.filter((n) => n.ok).length;
+  const total = notifications.length;
+  if (!ok) return "Alert delivery attempted for " + total + " recipient(s) \u2014 see server logs.";
+  return "Alert sent to " + ok + " of " + total + " recipient(s) on WhatsApp.";
+}
+function showReceipt(t, notifications) {
+  const cr = t.direction === "credit";
+  const ic = cr
+    ? '<path d="M12 19V5m0 0-6 6m6-6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
+    : '<path d="M12 5v14m0 0 6-6m-6 6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+  $("modal").innerHTML = `<div class="mh"><h3>${cr ? "Credit" : "Debit"} posted</h3><button class="x" onclick="closeModal()">\u00d7</button></div>
+    <div class="mb"><div class="receipt"><div class="rc-ic ${cr ? "ok" : "dr"}"><svg width="26" height="26" viewBox="0 0 24 24" fill="none">${ic}</svg></div>
+    <div class="rc-amt ${cr ? "teal" : "crimson"}">${cr ? "+" : "\u2212"}${NGN(t.amount)}</div>
+    <div class="rc-sub">${esc(t.party)}</div></div>
+    <div class="rc-rows">
+      <div class="rr"><span>Channel</span><b>${esc(t.channel)}</b></div>
+      <div class="rr"><span>Reference</span><b>${esc(t.ref)}</b></div>
+      <div class="rr"><span>Balance</span><b>${NGN(t.balanceAfter)}</b></div>
+      <div class="rr"><span>Time</span><b>${hhmm(t.postedAt)} \u00b7 ${dayLabel(t.postedAt)}</b></div>
+    </div>
+    <p class="rc-note">${esc(deliveryLine(notifications))}</p>
+    <button class="btn block" onclick="closeModal()" style="margin-top:1rem">Done</button></div>`;
+  $("modalBg").classList.add("on");
+}
+
+/* ---------- one-off actions ---------- */
+async function closeDay() {
+  try {
+    const res = await api("POST", "/api/summary/run", {});
+    const n = (res.notifications || []).length;
+    toast("Daily summary sent" + (n ? " to " + n + " recipient(s)" : " (no recipients)"));
+  } catch (e) {
+    toast("Close day failed: " + e.message, true);
+  }
+}
+async function resetDay() {
+  if (!confirm("Reset the demo day? This clears today's transactions and summaries.")) return;
+  try {
+    await api("POST", "/api/account/reset", {});
+    S.prompted = false;
+    await refresh();
+    toast("Demo day reset \u2014 opening balance restored");
+  } catch (e) {
+    toast("Reset failed: " + e.message, true);
+  }
+}
+async function setType(type) {
+  try {
+    await api("PATCH", "/api/account", { type });
+    await refresh();
+    toast("Account type: " + (TYPE_LABEL[type] || type));
+  } catch (e) {
+    toast("Could not change type: " + e.message, true);
+  }
+}
+async function saveHolder() {
+  try {
+    await api("PATCH", "/api/account", { holderWa: $("holderWa").value.trim() });
+    await refresh();
+    toast("Holder number saved");
+  } catch (e) {
+    toast("Could not save: " + e.message, true);
+  }
+}
+async function removeRecipient(id) {
+  if (!confirm("Remove this recipient? They will stop receiving alerts.")) return;
+  try {
+    await api("DELETE", "/api/recipients/" + id);
+    await refresh();
+    toast("Recipient removed");
+  } catch (e) {
+    toast("Could not remove: " + e.message, true);
+  }
+}
+
+/* ---------- events ---------- */
+function bind() {
+  document.querySelectorAll(".tab").forEach((t) => t.addEventListener("click", () => showView(t.dataset.view)));
+  document.body.addEventListener("click", (e) => {
+    const modalTrigger = e.target.closest("[data-modal]");
+    if (modalTrigger) return openModal(modalTrigger.dataset.modal);
+    const goto = e.target.closest("[data-goto]");
+    if (goto) return showView(goto.dataset.goto);
+    const rm = e.target.closest("[data-remove]");
+    if (rm) return removeRecipient(rm.dataset.remove);
+    const seg = e.target.closest("#typeSeg button");
+    if (seg) return setType(seg.dataset.type);
+  });
+  $("eyeBtn").addEventListener("click", () => {
+    S.hidden = !S.hidden;
+    renderBalance();
+  });
+  $("closeDay").addEventListener("click", closeDay);
+  $("resetDay").addEventListener("click", resetDay);
+  $("saveHolder").addEventListener("click", saveHolder);
+  $("modalBg").addEventListener("click", (e) => {
+    if (e.target === e.currentTarget) closeModal();
+  });
+  document.addEventListener("change", (e) => {
+    if (e.target && e.target.id === "rcScope") {
+      $("rcThrWrap").style.display = e.target.value === "threshold" ? "block" : "none";
+    }
+  });
+}
+
+/* ---------- boot ---------- */
+async function boot() {
+  bind();
+  try {
+    await refresh();
+  } catch (e) {
+    toast("Could not load account: " + e.message, true);
+  }
+  showView("home");
+}
+boot();
+</script>
+</body>
+</html>
