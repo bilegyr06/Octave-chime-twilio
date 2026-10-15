@@ -27,6 +27,7 @@ router.post(
     const data = await sendMessage({
       to,
       body: "Aster Bank test message \u2014 your WhatsApp alerts are connected.",
+      kind: "test",
     });
     res.json({ ok: true, sid: data.sid, status: data.status, to: data.to });
   })
