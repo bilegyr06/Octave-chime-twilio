@@ -28,7 +28,7 @@ async function dispatch({
   }
 
   try {
-    const data = await sendMessage({ to: toNumber, body });
+    const data = await sendMessage({ to: toNumber, body, kind });
     await query(
       "UPDATE oc_message_log SET twilio_sid=$1, status=$2, updated_at=now() WHERE id=$3",
       [data.sid || null, data.status || "queued", logId]
