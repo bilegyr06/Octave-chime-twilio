@@ -33,10 +33,74 @@ function configured() {
 // Codes that mean "freeform text is not allowed here \u2014 send a Content Template instead".
 const NEEDS_TEMPLATE = /^(21654|21655|92005|63016)$/;
 
+const todayLabel = () =>
+  new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric" }).format(new Date());
+
+// Trial accounts must send every WhatsApp message as a Content Template. Map the
+// app's multi-line message text onto the sandbox's pre-approved
+// "Order Notifications" template: "Your {{1}} order of {{2}} has shipped and
+// should be delivered on {{3}}. Details: {{4}}".
+function templateVariables(body, kind) {
+  const text = String(body || "");
+  const lines = text.split("\n").map((l) => l.trim());
+  const value = (key) => {
+    const line = lines.find((l) => l.toLowerCase().startsWith(key.toLowerCase() + ":"));
+    return line ? line.slice(line.indexOf(":") + 1).trim() : "";
+  };
+  const detail = (parts) => parts.filter(Boolean).join(", ");
+
+  if (kind === "alert") {
+    const title = (lines.find(Boolean) || "").replace(/^Aster Bank\s*[-\u2014]\s*/i, "");
+    const partyKey = /credit/i.test(title) ? "From" : "To";
+    return {
+      "1": "Aster Bank",
+      "2": `${title}: ${value("Amount")} ${value(partyKey)}`,
+      "3": value("Time"),
+      "4": detail([`Acct ${value("Acct")}`, value("Channel"), `Ref ${value("Ref")}`, `Balance ${value("Balance")}`]),
+    };
+  }
+  if (kind === "summary") {
+    return {
+      "1": "Aster Bank",
+      "2": `Daily Summary (${value("Transactions")} transactions)`,
+      "3": lines[1] || todayLabel(),
+      "4": detail([
+        `Acct ${value("Acct")}`,
+        `Opening ${value("Opening balance")}`,
+        `Closing ${value("Closing balance")}`,
+        `Net ${value("Net movement")}`,
+      ]),
+    };
+  }
+  if (kind === "optin") {
+    const holder = (text.match(/^Aster Bank:\s*(.*?)\s+wants to send/i) || [])[1] || "the account holder";
+    return {
+      "1": "Aster Bank",
+      "2": `account alerts from ${holder}`,
+      "3": todayLabel(),
+      "4": "Reply YES to accept, STOP to decline.",
+    };
+  }
+  if (kind === "test") {
+    return {
+      "1": "Aster Bank",
+      "2": "WhatsApp alerts connectivity test",
+      "3": todayLabel(),
+      "4": "Your Aster Bank WhatsApp alerts are connected.",
+    };
+  }
+  return {
+    "1": "Aster Bank",
+    "2": "account alert update",
+    "3": todayLabel(),
+    "4": text.replace(/\s*\n\s*/g, " "),
+  };
+}
+
 // Send a WhatsApp message. Freeform Body text only works inside the 24h
 // conversation window; when Twilio demands a template (or TWILIO_CONTENT_SID is
 // configured for business-initiated sends), fall back to ContentSid + variables.
-async function sendMessage({ to, body, statusCallback, contentSid, contentVariables }) {
+async function sendMessage({ to, body, statusCallback, contentSid, contentVariables, kind = "reply" }) {
   if (!configured()) {
     const e = new Error(
       "Twilio is not configured. Set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN and TWILIO_WHATSAPP_FROM in .env."
@@ -91,7 +155,7 @@ async function sendMessage({ to, body, statusCallback, contentSid, contentVariab
     return post(
       makeForm({
         ContentSid: sid,
-        ContentVariables: JSON.stringify(contentVariables || { "1": text }),
+        ContentVariables: JSON.stringify(contentVariables || templateVariables(text, kind)),
       })
     );
   }
@@ -101,7 +165,7 @@ async function sendMessage({ to, body, statusCallback, contentSid, contentVariab
     return post(
       makeForm({
         ContentSid: sid,
-        ContentVariables: JSON.stringify(contentVariables || { "1": text }),
+        ContentVariables: JSON.stringify(contentVariables || templateVariables(text, kind)),
       })
     );
   }
@@ -116,7 +180,7 @@ async function sendMessage({ to, body, statusCallback, contentSid, contentVariab
       return post(
         makeForm({
           ContentSid: sid,
-          ContentVariables: JSON.stringify(contentVariables || { "1": text }),
+          ContentVariables: JSON.stringify(contentVariables || templateVariables(text, kind)),
         })
       );
     }
